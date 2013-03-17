@@ -24,33 +24,31 @@ public class SearchFileInFolder {
     }
 
     private void validateInputs() throws IllegalArgumentException {
-        String outputMessage = null;
         if (StringUtils.isEmpty(targetDirectoryName)) {
-            outputMessage = "Input error: targetDirectoryName can not be empty";
+            throw new IllegalArgumentException("Input error: targetDirectoryName can not be empty");
         }
         if (StringUtils.isEmpty(fileName)) {
-            outputMessage = "Input error: fileName can not be empty";
+            throw new IllegalArgumentException("Input error: fileName can not be empty");
         }
         if (fileName.length() > 255) {
-            outputMessage = "Input error: the fileName length can not be more than 255 characters";
+            throw new IllegalArgumentException("Input error: the fileName length can not be more than 255 characters");
         }
         if ((targetDirectoryName.length() + fileName.length()) > 260) {
-            outputMessage = "Input error: the total path length can not be more than 260 characters";
+            throw new IllegalArgumentException("Input error: the total path length can not be more than 260 characters");
         }
 
         File directory = new File(targetDirectoryName);
         if (!directory.isDirectory()) {
-            outputMessage = "Input error: \"" + targetDirectoryName + "\" is not a directory";
+            throw new IllegalArgumentException("Input error: \"" + targetDirectoryName + "\" is not a directory");
         }
         if (!directory.canRead()) {
-            outputMessage = "Directory \"" + targetDirectoryName + "\" can not be read";
-        }
-        if (outputMessage != null) {
-            throw new IllegalArgumentException(outputMessage);
+            throw new IllegalArgumentException("Directory \"" + targetDirectoryName + "\" can not be read");
         }
     }
 
     public void searchFileAndPrint() throws FileSearcherException {
+        //let's validate user inputs first
+        validateInputs();
 
         File file = processDirectoryRecursively(new File(targetDirectoryName), fileName);
         if (file == null) {
@@ -112,7 +110,6 @@ public class SearchFileInFolder {
 
         try {
             SearchFileInFolder searcher = new SearchFileInFolder(args[0], args[1]);
-            searcher.validateInputs();
             searcher.searchFileAndPrint();
         } catch (IllegalArgumentException iae) {
             System.out.println("One or more input arguments are not valid:\n" + iae.getMessage());
