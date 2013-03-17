@@ -1,6 +1,7 @@
 package com.lohika.itkachuk.javatc.lesson3;
 
 import com.lohika.itkachuk.javatc.lesson3.exceptions.FileSearcherException;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.*;
 
@@ -11,84 +12,79 @@ import java.io.*;
  */
 public class SearchFileInFolder {
 
-    private File targetDirectory;
+    private String targetDirectoryName;
 
     private String fileName;
 
-    private String outputMessage;
-
     private long scannedDirectoriesCounter;
 
-    public SearchFileInFolder(String targetDirectoryName, String fileName) throws IllegalArgumentException {
-        if (validateInputs(targetDirectoryName, fileName)) {
-            this.targetDirectory = new File(targetDirectoryName);
-            this.fileName = fileName;
-        } else
-            throw new IllegalArgumentException(outputMessage);
+    public SearchFileInFolder(String targetDirectoryName, String fileName) {
+        this.targetDirectoryName = targetDirectoryName;
+        this.fileName = fileName;
     }
 
-    private boolean validateString(String inputString){
-        return (inputString != null && !inputString.isEmpty());
-    }
-
-    private boolean validateInputs(String targetDirectoryName, String fileName){
-        if (!validateString(targetDirectoryName)) {
+    private void validateInputs() throws IllegalArgumentException {
+        String outputMessage = null;
+        if (StringUtils.isEmpty(targetDirectoryName)) {
             outputMessage = "Input error: targetDirectoryName can not be empty";
-            return false;
         }
-        if (!validateString(fileName)) {
+        if (StringUtils.isEmpty(fileName)) {
             outputMessage = "Input error: fileName can not be empty";
-            return false;
         }
         if (fileName.length() > 255) {
             outputMessage = "Input error: the fileName length can not be more than 255 characters";
-            return false;
         }
         if ((targetDirectoryName.length() + fileName.length()) > 260) {
             outputMessage = "Input error: the total path length can not be more than 260 characters";
-            return false;
         }
 
         File directory = new File(targetDirectoryName);
         if (!directory.isDirectory()) {
             outputMessage = "Input error: \"" + targetDirectoryName + "\" is not a directory";
-            return false;
         }
         if (!directory.canRead()) {
             outputMessage = "Directory \"" + targetDirectoryName + "\" can not be read";
-            return false;
         }
-        return true;
+        if (outputMessage != null) {
+            throw new IllegalArgumentException(outputMessage);
+        }
     }
 
     public void searchFileAndPrint() throws FileSearcherException {
 
-        File file = processDirectoryRecursively(targetDirectory, fileName);
+        File file = processDirectoryRecursively(new File(targetDirectoryName), fileName);
         if (file == null) {
             throw new FileSearcherException("The FileSearcher was unable to find the file \""
-                    + fileName + "\" in the directory \"" + targetDirectory + "\" and all its subdirectories");
+                    + fileName + "\" in the directory \"" + targetDirectoryName + "\" and all its subdirectories");
         }
 
-        try {
-            System.out.println("Found file at: " + file.getAbsolutePath());
-            System.out.println("Scanned directories count: " + scannedDirectoriesCounter);
-            System.out.println("Printing file content:\n");
+        System.out.println("Found file at: " + file.getAbsolutePath());
+        System.out.println("Scanned directories count: " + scannedDirectoriesCounter);
+        System.out.println("Printing file content:\n");
+        BufferedReader in = null;
 
+        try {
             // print file content to console
-            BufferedReader in = new BufferedReader(new FileReader(file));
+            in = new BufferedReader(new FileReader(file));
             String line = in.readLine();
             while (line != null) {
                 System.out.println(line);
                 line = in.readLine();
             }
-            in.close();
-        } catch(FileNotFoundException e) {
+        } catch (FileNotFoundException e) {
             throw new FileSearcherException("The FileSearcher internal error occurred, caused by FileNotFoundException: " + e.getMessage(), e.getCause());
         } catch (IOException e) {
             throw new FileSearcherException("The FileSearcher internal error occurred, caused by IOException: " + e.getMessage(), e.getCause());
+        } finally {
+            try {
+                in.close();
+            } catch (Exception e) {
+                throw new FileSearcherException("The FileSearcher internal error occurred, caused by Exception: " + e.getMessage(), e.getCause());
+            }
+
         }
     }
-
+    //TODO: think about how you can find it without recursion also
     private File processDirectoryRecursively(File directory, String fileName) {
         scannedDirectoriesCounter++;
         // check, if we have target file in current directory
@@ -116,6 +112,7 @@ public class SearchFileInFolder {
 
         try {
             SearchFileInFolder searcher = new SearchFileInFolder(args[0], args[1]);
+            searcher.validateInputs();
             searcher.searchFileAndPrint();
         } catch (IllegalArgumentException iae) {
             System.out.println("One or more input arguments are not valid:\n" + iae.getMessage());
